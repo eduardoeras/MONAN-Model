@@ -710,20 +710,24 @@
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
- !DEBUG PBL SCHEME
- open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/pbl_scheme.txt', status='unknown', action='write', position='append')
-   write(44,*) 'PBL Scheme = ', trim(pbl_scheme)
- close(44)
+  !DEBUG PBL SCHEME
+  open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/pbl_scheme.txt', status='unknown', action='write', position='append')
+    write(44,*) 'init_pbl PBL Scheme = ', trim(pbl_scheme)
+  close(44)
 
  pbl_select: select case (trim(pbl_scheme))
-
     case("bl_mynn")
        call mpas_log_write('--- enter subroutine bl_mynn_init:')
        call bl_mynn_init(cp,cpv,cice,cliq,ep_1,ep_2,gravity,karman,P0,R_d,R_v,svp1,svp2,svp3,svpt0, &
                          xlf,xls,xlv,errmsg,errflg)
        call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
-
+    case('bl_taylor')
+        !DEBUG PBL SCHEME
+        open(unit=86, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/pbl_scheme.txt', status='unknown', action='write', position='append')
+          write(86,*) 'init_pbl select case Taylor PBL Scheme = ', trim(pbl_scheme)
+        close(86)
     case default
+
 
  end select pbl_select
 
