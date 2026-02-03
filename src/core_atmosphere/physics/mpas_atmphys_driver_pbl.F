@@ -711,7 +711,7 @@
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
  !DEBUG PBL SCHEME
- open(newunit=44, file='pbl_scheme.txt', status='unknown', action='write', position='append')
+ open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/pbl_scheme.txt', status='unknown', action='write', position='append')
    write(44,*) 'PBL Scheme = ', trim(pbl_scheme)
  close(44)
 
