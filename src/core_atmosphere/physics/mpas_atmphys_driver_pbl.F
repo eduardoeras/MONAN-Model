@@ -82,7 +82,6 @@
 
  contains
 
-
 !=================================================================================================================
  subroutine allocate_pbl(configs)
 !=================================================================================================================
@@ -126,6 +125,19 @@
  pbl_select: select case (trim(pbl_scheme))
 
     case("bl_ysu")
+       !from surface-layer model:
+       if(.not.allocated(br_p)          ) allocate(br_p(ims:ime,jms:jme)                )
+       if(.not.allocated(ctopo_p)       ) allocate(ctopo_p(ims:ime,jms:jme)             )
+       if(.not.allocated(ctopo2_p)      ) allocate(ctopo2_p(ims:ime,jms:jme)            )
+       if(.not.allocated(delta_p)       ) allocate(delta_p(ims:ime,jms:jme)             )
+       if(.not.allocated(psih_p)        ) allocate(psih_p(ims:ime,jms:jme)              )
+       if(.not.allocated(psim_p)        ) allocate(psim_p(ims:ime,jms:jme)              )
+       if(.not.allocated(u10_p)         ) allocate(u10_p(ims:ime,jms:jme)               )
+       if(.not.allocated(v10_p)         ) allocate(v10_p(ims:ime,jms:jme)               )
+       if(.not.allocated(exch_p)        ) allocate(exch_p(ims:ime,kms:kme,jms:jme)      )
+       if(.not.allocated(wstar_p)       ) allocate(wstar_p(ims:ime,jms:jme)             )
+    
+    case("bl_taylor")
        !from surface-layer model:
        if(.not.allocated(br_p)          ) allocate(br_p(ims:ime,jms:jme)                )
        if(.not.allocated(ctopo_p)       ) allocate(ctopo_p(ims:ime,jms:jme)             )
@@ -234,6 +246,19 @@
  pbl_select: select case (trim(pbl_scheme))
 
     case("bl_ysu")
+       !from surface-layer model:
+       if(allocated(br_p)          ) deallocate(br_p          )
+       if(allocated(ctopo_p)       ) deallocate(ctopo_p       )
+       if(allocated(ctopo2_p)      ) deallocate(ctopo2_p      )
+       if(allocated(delta_p)       ) deallocate(delta_p       )
+       if(allocated(psih_p)        ) deallocate(psih_p        )
+       if(allocated(psim_p)        ) deallocate(psim_p        )
+       if(allocated(u10_p)         ) deallocate(u10_p         )
+       if(allocated(v10_p)         ) deallocate(v10_p         )
+       if(allocated(exch_p)        ) deallocate(exch_p        )
+       if(allocated(wstar_p)       ) deallocate(wstar_p       )
+   
+    case("bl_taylor")
        !from surface-layer model:
        if(allocated(br_p)          ) deallocate(br_p          )
        if(allocated(ctopo_p)       ) deallocate(ctopo_p       )
@@ -376,6 +401,44 @@
  pbl_select: select case (trim(pbl_scheme))
 
     case("bl_ysu")
+       call mpas_pool_get_config(configs,'config_ysu_pblmix',config_ysu_pblmix)
+
+       call mpas_pool_get_array(diag_physics,'br'   ,br   )
+       call mpas_pool_get_array(diag_physics,'delta',delta)
+       call mpas_pool_get_array(diag_physics,'fm'   ,fm   )
+       call mpas_pool_get_array(diag_physics,'fh'   ,fh   )
+       call mpas_pool_get_array(diag_physics,'u10'  ,u10  )
+       call mpas_pool_get_array(diag_physics,'v10'  ,v10  )
+       call mpas_pool_get_array(diag_physics,'wstar',wstar)
+
+       ysu_pblmix = 0
+       if(config_ysu_pblmix) ysu_pblmix = 1
+
+       do j = jts,jte
+       do i = its,ite
+          !from surface-layer model:
+          br_p(i,j)     = br(i)
+          psim_p(i,j)   = fm(i)
+          psih_p(i,j)   = fh(i)
+          u10_p(i,j)    = u10(i)
+          v10_p(i,j)    = v10(i)
+          delta_p(i,j)  = delta(i)
+          wstar_p(i,j)  = wstar(i)
+          !initialization for YSU PBL scheme:
+          ctopo_p(i,j)  = 1._RKIND
+          ctopo2_p(i,j) = 1._RKIND
+       enddo
+       enddo
+
+       do j = jts,jte
+       do k = kts,kte
+       do i = its,ite
+          exch_p(i,k,j) = 0._RKIND
+       enddo
+       enddo
+       enddo
+   
+    case("bl_taylor")
        call mpas_pool_get_config(configs,'config_ysu_pblmix',config_ysu_pblmix)
 
        call mpas_pool_get_array(diag_physics,'br'   ,br   )
@@ -619,6 +682,23 @@
        enddo
        enddo
 
+    case("bl_taylor")
+       call mpas_pool_get_array(diag_physics,'delta',delta  )
+       call mpas_pool_get_array(diag_physics,'wstar' ,wstar )
+       call mpas_pool_get_array(diag_physics,'exch_h',exch_h)
+
+       do j = jts,jte
+       do i = its,ite
+          delta(i) = delta_p(i,j)
+          wstar(i) = wstar_p(i,j)
+       enddo
+       do k = kts,kte
+       do i = its,ite
+          exch_h(k,i) = exch_p(i,k,j)
+       enddo
+       enddo
+       enddo
+
     case("bl_mynn")
        call mpas_pool_get_array(diag_physics,'el_pbl'    ,el_pbl    )
        call mpas_pool_get_array(diag_physics,'cov'       ,cov       )
@@ -710,10 +790,11 @@
 
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
-  !DEBUG PBL SCHEME
-  open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/pbl_scheme.txt', status='unknown', action='write', position='append')
-    write(44,*) 'init_pbl PBL Scheme = ', trim(pbl_scheme)
+  !DEBUG!===============================================================================================================================================!
+  open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/debug.txt', status='unknown', action='write', position='append')
+    write(44,*) 'init_pbl : ', trim(pbl_scheme)
   close(44)
+  !DEBUG!===============================================================================================================================================!
 
  pbl_select: select case (trim(pbl_scheme))
     case("bl_mynn")
@@ -722,10 +803,11 @@
                          xlf,xls,xlv,errmsg,errflg)
        call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
     case('bl_taylor')
-        !DEBUG PBL SCHEME
-        open(unit=86, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/pbl_scheme.txt', status='unknown', action='write', position='append')
-          write(86,*) 'init_pbl select case Taylor PBL Scheme = ', trim(pbl_scheme)
-        close(86)
+        !DEBUG!===============================================================================================================================================!
+        open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/debug.txt', status='unknown', action='write', position='append')
+            write(44,*) 'init_pbl taylor select-case : ', trim(pbl_scheme)
+        close(44)
+        !DEBUG!===============================================================================================================================================!
     case default
 
 
@@ -829,7 +911,36 @@
                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme  , &
                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
                 )
-       call mpas_timer_stop('bl_ysu')
+       call mpas_timer_stop('bl_ysu')    
+
+    case("bl_taylor")
+       call mpas_timer_start('bl_taylor')
+       call ysu ( &
+                 p3d      = pres_hyd_p , p3di     = pres2_hyd_p , psfc     = psfc_p     , &
+                 t3d      = t_p        , dz8w     = dz_p        , pi3d     = pi_p       , &
+                 u3d      = u_p        , v3d      = v_p         , qv3d     = qv_p       , &
+                 qc3d     = qc_p       , qi3d     = qi_p        , rublten  = rublten_p  , &
+                 rvblten  = rvblten_p  , rthblten = rthblten_p  , rqvblten = rqvblten_p , &
+                 rqcblten = rqcblten_p , rqiblten = rqiblten_p  , flag_qc  = f_qc       , &
+                 flag_qi  = f_qi       , cp       = cp          , g        = gravity    , &
+                 rovcp    = rcp        , rd       = R_d         , rovg     = rdg        , & 
+                 ep1      = ep_1       , ep2      = ep_2        , karman   = karman     , &
+                 xlv      = xlv        , rv       = R_v         , znt      = znt_p      , &
+                 ust      = ust_p      , hpbl     = hpbl_p      , psim     = psim_p     , &
+                 psih     = psih_p     , xland    = xland_p     , hfx      = hfx_p      , &
+                 qfx      = qfx_p      , wspd     = wspd_p      , br       = br_p       , &
+                 dt       = dt_pbl     , kpbl2d   = kpbl_p      , exch_h   = kzh_p      , &
+                 exch_m   = kzm_p      , wstar    = wstar_p     , delta    = delta_p    , &
+                 uoce     = uoce_p     , voce     = voce_p      , rthraten = rthraten_p , &
+                 u10      = u10_p      , v10      = v10_p       , ctopo    = ctopo_p    , &
+                 ctopo2   = ctopo2_p   , flag_bep = flag_bep    , idiff    = idiff      , &
+                 ysu_topdown_pblmix = ysu_pblmix ,                                        &
+                 errmsg   = errmsg     , errflg   = errflg      ,                         &
+                 ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde  , &
+                 ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme  , &
+                 its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
+                )
+       call mpas_timer_stop('bl_taylor')
 
     case("bl_mynn")
        call mpas_pool_get_config(configs,'config_mynn_cloudpdf'   ,bl_mynn_cloudpdf   )
