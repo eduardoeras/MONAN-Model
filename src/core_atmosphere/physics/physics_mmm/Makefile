@@ -9,6 +9,7 @@ OBJS = \
 	bl_gwdo.o \
 	bl_mynn.o \
 	bl_mynn_subroutines.o \
+	bl_taylor.o \
 	bl_ysu.o \
 	cu_ntiedtke.o \
 	mp_radar.o \

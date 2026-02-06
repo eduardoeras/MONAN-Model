@@ -17,6 +17,7 @@
  use bl_mynn,only: bl_mynn_init
  use module_bl_mynn,only: mynn_bl_driver
  use module_bl_ysu
+ use module_bl_taylor
 
  implicit none
  private

@@ -10,6 +10,7 @@ OBJS = \
 	module_bep_bem_helper.o        \
 	module_bl_gwdo.o               \
 	module_bl_mynn.o               \
+	module_bl_taylor.o             \
 	module_bl_ysu.o                \
 	module_cam_error_function.o    \
 	module_cam_shr_kind_mod.o      \
