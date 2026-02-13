@@ -1,0 +1,43 @@
+Taylor BL Scheme Implementation Notebook
+By Eduardo Rohde Eras
+-----------------------------------------------------------------------------------------------------
+
+Tips By Guilherme Ferache
+
+    Registry.xml
+        YSU PBL SCHEME - apenas adicionar uma segunda variável separado por vírgula
+
+    Interface
+        mpas_atmphys_interface.fortran
+        Vem antes do driver
+
+    mpas_atmphys_control
+        if linha 218
+        Também incluí as definições de suíte
+        Manter a nomenclatura, ex. inActive
+
+    mpas_atmphys_package
+        linha 150 nullif
+        else if linha 171
+
+    Elementos Finitos, Diferenças Finitas, Volumes Finitos
+
+Tips By Guilherme Mendonça
+
+    core atmosphere -> registry.xml
+    mpas_atmphys_control.F
+    mpas_atmphys_package.F
+
+-----------------------------------------------------------------------------------------------------
+core_atmosphere
+    Registry.xml                        [OK]
+    physics
+        physics_mmm
+            bl_ysu.F                    [OK]
+            MakeFile                    [OK]
+        physics_wrf
+            module_bl_ysu.F             [OK]
+            MakeFIle                    [OK]
+        mpas_atmphys_control.F          [OK]
+        mpas_atmphys_driver_pbl.F       [OK]
+        mpas_atmphys_packages.F         [OK]

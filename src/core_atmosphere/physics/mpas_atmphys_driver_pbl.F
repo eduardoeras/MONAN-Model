@@ -916,7 +916,7 @@
 
     case("bl_taylor")
        call mpas_timer_start('bl_taylor')
-       call ysu ( &
+       call taylor ( &
                  p3d      = pres_hyd_p , p3di     = pres2_hyd_p , psfc     = psfc_p     , &
                  t3d      = t_p        , dz8w     = dz_p        , pi3d     = pi_p       , &
                  u3d      = u_p        , v3d      = v_p         , qv3d     = qv_p       , &

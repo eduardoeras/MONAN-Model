@@ -217,6 +217,7 @@ else if (trim(config_physics_suite) == 'mesoscale_reference_monan') then
 !pbl scheme:
  if(.not. (config_pbl_scheme .eq. 'off'     .or. &
            config_pbl_scheme .eq. 'bl_mynn' .or. &
+           config_pbl_scheme .eq. 'bl_taylor' .or. &
            config_pbl_scheme .eq. 'bl_ysu')) then
 
     write(mpas_err_message,'(A,A10)') 'illegal value for pbl_scheme: ', &
@@ -295,6 +296,13 @@ else if (trim(config_physics_suite) == 'mesoscale_reference_monan') then
  else
     if(config_pbl_scheme == 'bl_mynn') then
        config_sfclayer_scheme = 'sf_mynn'
+    elseif(config_pbl_scheme == 'bl_taylor') then
+       if(config_sfclayer_scheme /= 'sf_monin_obukhov' .and. &
+          config_sfclayer_scheme /= 'sf_monin_obukhov_rev') then
+          write(mpas_err_message,'(A,A10)') 'wrong choice for surface layer scheme with Taylor PBL: ', &
+                trim(config_sfclayer_scheme)
+          call physics_error_fatal(mpas_err_message)
+       endif
     elseif(config_pbl_scheme == 'bl_ysu') then
        if(config_sfclayer_scheme /= 'sf_monin_obukhov' .and. &
           config_sfclayer_scheme /= 'sf_monin_obukhov_rev') then
