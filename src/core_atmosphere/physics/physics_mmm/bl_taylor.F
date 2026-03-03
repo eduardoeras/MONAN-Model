@@ -333,6 +333,13 @@
    real(kind=kind_phys),     dimension( kts:kte  ) :: thvx_1d,tke_1d,dzq_1d
    real(kind=kind_phys),     dimension( kts:kte+1) :: zq_1d
 
+!DEBUG!===============================================================================================================================================!
+open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/debug.txt', status='unknown', action='write', position='append')
+write(44,*) 'bl_taylor: inside bl_taylor_run'
+close(44)
+!DEBUG!===============================================================================================================================================!
+
+
 !
 !-------------------------------------------------------------------------------
 !

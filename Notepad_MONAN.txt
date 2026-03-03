@@ -41,3 +41,7 @@ core_atmosphere
         mpas_atmphys_control.F          [OK]
         mpas_atmphys_driver_pbl.F       [OK]
         mpas_atmphys_packages.F         [OK]
+
+-----------------------------------------------------------------------------------------------------
+To add/remove variables in the simulations:
+stream_list.atmosphere.diagnostics.OPER

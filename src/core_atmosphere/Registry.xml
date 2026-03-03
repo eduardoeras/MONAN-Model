@@ -2552,28 +2552,15 @@
                 <!-- YSU PBL SCHEME: -->
                 <var name="delta" type="real" dimensions="nCells Time" units="m"
                      description="entrainment layer depth from PBL scheme"
-                     packages="bl_ysu_in"/>
+                     packages="bl_ysu_in;bl_taylor_in"/>
 
                 <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
                      description="mixed velocity scale from PBL scheme"
-                     packages="bl_ysu_in"/>
+                     packages="bl_ysu_in;bl_taylor_in"/>
 
                 <var name="exch_h" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="exchange coefficient"
-                     packages="bl_ysu_in"/>
-
-               <!-- TAYLOR PBL SCHEME: -->
-                <var name="delta" type="real" dimensions="nCells Time" units="m"
-                     description="entrainment layer depth from PBL scheme"
-                     packages="bl_taylor_in"/>
-
-                <var name="wstar" type="real" dimensions="nCells Time" units="m s^{-1}"
-                     description="mixed velocity scale from PBL scheme"
-                     packages="bl_taylor_in"/>
-
-                <var name="exch_h" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
-                     description="exchange coefficient"
-                     packages="bl_taylor_in"/>          
+                     packages="bl_ysu_in;bl_taylor_in"/>   
 
                 <!-- MYNN PBL SCHEME: -->
                 <var name="cldfrac_bl" type="real" dimensions="nVertLevels nCells Time" units="unitless"

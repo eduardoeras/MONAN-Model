@@ -388,6 +388,13 @@
          ctopo2_hv(i) = ctopo2(i,j)
       end do
 !
+
+!DEBUG!===============================================================================================================================================!
+open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/debug.txt', status='unknown', action='write', position='append')
+write(44,*) 'module_bl_taylor: before call to bl_taylor_run'
+close(44)
+!DEBUG!===============================================================================================================================================!
+
       call bl_taylor_run(ux=u3d_hv,vx=v3d_hv                                      &
               ,tx=t3d_hv                                                       &
               ,qvx=qv3d_hv,qcx=qc3d_hv,qix=qi3d_hv                             &
