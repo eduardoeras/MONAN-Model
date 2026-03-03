@@ -1,5 +1,5 @@
 Taylor BL Scheme Implementation Notebook
-By Eduardo Rohde Eras
+By Dr. Eduardo Rohde Eras
 -----------------------------------------------------------------------------------------------------
 
 Tips By Guilherme Ferache
@@ -45,3 +45,7 @@ core_atmosphere
 -----------------------------------------------------------------------------------------------------
 To add/remove variables in the simulations:
 stream_list.atmosphere.diagnostics.OPER
+
+PBS:
+    qstat
+    qdel

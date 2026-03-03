@@ -792,9 +792,7 @@
  call mpas_pool_get_config(configs,'config_pbl_scheme',pbl_scheme)
 
   !DEBUG!===============================================================================================================================================!
-  open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/debug.txt', status='unknown', action='write', position='append')
-    write(44,*) 'init_pbl : ', trim(pbl_scheme)
-  close(44)
+  call mpas_log_write('[TAYLOR DEBUG] init_pbl : '//trim(pbl_scheme))     
   !DEBUG!===============================================================================================================================================!
 
  pbl_select: select case (trim(pbl_scheme))
@@ -805,9 +803,7 @@
        call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
     case('bl_taylor')
         !DEBUG!===============================================================================================================================================!
-        open(unit=44, file='/p/projetos/monan_atm/eduardo.eras/SandBox/scripts_CD-CT/dataout/debug.txt', status='unknown', action='write', position='append')
-            write(44,*) 'init_pbl taylor select-case : ', trim(pbl_scheme)
-        close(44)
+         call mpas_log_write('[TAYLOR DEBUG] taylor select-case : '//trim(pbl_scheme))
         !DEBUG!===============================================================================================================================================!
     case default
 
