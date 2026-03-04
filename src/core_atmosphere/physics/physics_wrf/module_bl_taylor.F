@@ -38,7 +38,7 @@
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
-                  errmsg,errflg                                                &
+                  errmsg,errflg,itimestep                                      &
                  )
 !-------------------------------------------------------------------------------
   implicit none
@@ -227,6 +227,7 @@
 !
    character(len=*), intent(out)   ::                                  errmsg
    integer,          intent(out)   ::                                  errflg
+   integer,intent(in)              ::                               itimestep
 !local
    integer ::  i,j,k
 
@@ -429,7 +430,9 @@
               ,sfk=sfk_hv,vlk=vlk_hv,dlu=dl_u_hv,dlg=dlg_hv,frcurb=frcurb_hv   &
               ,flag_bep=flag_bep                                               &
               ,its=its,ite=ite,kte=kte,kme=kme                                 &
-              ,errmsg=errmsg,errflg=errflg                                     )
+              ,errmsg=errmsg,errflg=errflg                                     &
+              ,itimestep=itimestep                                             &                
+              )
 !
       !  Assign local data back to full-sized arrays.
       !  Only required for the INTENT(OUT) or INTENT(INOUT) arrays.

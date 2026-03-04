@@ -935,7 +935,8 @@
                  errmsg   = errmsg     , errflg   = errflg      ,                         &
                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde  , &
                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme  , &
-                 its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte    &
+                 its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  , &
+                 itimestep = itimestep                                                    &
                 )
        call mpas_timer_stop('bl_taylor')
 

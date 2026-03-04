@@ -37,7 +37,8 @@
                          sfk,vlk,dlu,dlg,frcurb,                           &
                          flag_bep,                                         &
                          its,ite,kte,kme,                                  &
-                         errmsg,errflg                                     &
+                         errmsg,errflg,                                    &
+                         itimestep                                         &
                         )
 !-------------------------------------------------------------------------------
    implicit none
@@ -213,6 +214,8 @@
    character(len=*), intent(out)   ::                                  errmsg
    integer,          intent(out)   ::                                  errflg
 
+   integer,          intent(in)    ::                               itimestep
+
 !
 ! local vars
 !
@@ -335,7 +338,9 @@
    real(kind=kind_phys),     dimension( kts:kte+1) :: zq_1d
 
 !DEBUG!=========================================================================!
-call mpas_log_write('[TAYLOR DEBUG] inside bl_taylor_run')
+   character(len=256) :: debug_msg
+   integer            :: debug_int
+   real               :: debug_real
 !DEBUG!=========================================================================!
 
 
@@ -993,6 +998,26 @@ call mpas_log_write('[TAYLOR DEBUG] inside bl_taylor_run')
        endif
      enddo
    enddo
+
+   !DEBUG!=============================================================!
+   write(debug_msg, "(I10)" ) itimestep
+   call mpas_log_write('[TAYLOR DEBUG] Time Step = '//debug_msg)
+  ! call mpas_log_write('!DEBUG XKZM!=============================================================!')
+  ! do k = kts,kte-1
+  !     write(debug_msg, '(F10.3)') xkzm(its,k)
+  !     call mpas_log_write('[TAYLOR DEBUG]  xkzm = '//debug_msg)
+  ! enddo
+  ! call mpas_log_write('!DEBUG XKZH!=============================================================!')
+  ! do k = kts,kte-1
+  !     write(debug_msg, '(F10.3)') xkzh(its,k)
+  !     call mpas_log_write('[TAYLOR DEBUG]  xkzh = '//debug_msg)
+  ! enddo
+  ! call mpas_log_write('!DEBUG XKZQ!=============================================================!')
+  ! do k = kts,kte-1
+  !     write(debug_msg, '(F10.3)') xkzq(its,k)
+  !     call mpas_log_write('[TAYLOR DEBUG]  xkzq = '//debug_msg)
+  ! enddo
+   !DEBUG!=============================================================!
 !
 !     compute tridiagonal matrix elements for heat
 !

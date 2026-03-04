@@ -49,3 +49,7 @@ stream_list.atmosphere.diagnostics.OPER
 PBS:
     qstat
     qdel
+
+To compile a Fortran code:
+    ftn - ffree code.F -o code
+    ./code
