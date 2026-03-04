@@ -3,6 +3,7 @@
  module bl_taylor
  use ccpp_kinds,only: kind_phys
  use mpas_log, only: mpas_log_write
+ use bl_taylor_kzz, only: vertical_diffusivity
 
  implicit none
  private
@@ -999,24 +1000,29 @@
      enddo
    enddo
 
+   !TAYLOR CODE!=======================================================!
+
+   call vertical_diffusivity()
+
    !DEBUG!=============================================================!
-   write(debug_msg, "(I10)" ) itimestep
-   call mpas_log_write('[TAYLOR DEBUG] Time Step = '//debug_msg)
-  ! call mpas_log_write('!DEBUG XKZM!=============================================================!')
-  ! do k = kts,kte-1
-  !     write(debug_msg, '(F10.3)') xkzm(its,k)
-  !     call mpas_log_write('[TAYLOR DEBUG]  xkzm = '//debug_msg)
-  ! enddo
-  ! call mpas_log_write('!DEBUG XKZH!=============================================================!')
-  ! do k = kts,kte-1
-  !     write(debug_msg, '(F10.3)') xkzh(its,k)
-  !     call mpas_log_write('[TAYLOR DEBUG]  xkzh = '//debug_msg)
-  ! enddo
-  ! call mpas_log_write('!DEBUG XKZQ!=============================================================!')
-  ! do k = kts,kte-1
-  !     write(debug_msg, '(F10.3)') xkzq(its,k)
-  !     call mpas_log_write('[TAYLOR DEBUG]  xkzq = '//debug_msg)
-  ! enddo
+    write(debug_msg, "(I10)" ) itimestep
+    if (itimestep .eq. 200) then
+      call mpas_log_write('!DEBUG XKZM!=============================================================!')
+      do k = kts,kte-1
+          write(debug_msg, '(F10.3)') xkzm(its,k)
+          call mpas_log_write('[TAYLOR DEBUG]  xkzm = '//debug_msg)
+      enddo
+      call mpas_log_write('!DEBUG XKZH!=============================================================!')
+      do k = kts,kte-1
+          write(debug_msg, '(F10.3)') xkzh(its,k)
+          call mpas_log_write('[TAYLOR DEBUG]  xkzh = '//debug_msg)
+      enddo
+      call mpas_log_write('!DEBUG XKZQ!=============================================================!')
+      do k = kts,kte-1
+          write(debug_msg, '(F10.3)') xkzq(its,k)
+          call mpas_log_write('[TAYLOR DEBUG]  xkzq = '//debug_msg)
+      enddo
+    end if
    !DEBUG!=============================================================!
 !
 !     compute tridiagonal matrix elements for heat
