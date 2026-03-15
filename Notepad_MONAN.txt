@@ -53,3 +53,17 @@ PBS:
 To compile a Fortran code:
     ftn - ffree code.F -o code
     ./code
+
+To Do:
+    wstar is comming as 0.00 from model, try to
+    calculate my own wstar.
+
+-----------------------------------------------------------------------------------------------------
+March 09, 2026
+    /pesq/share/monan/eduardo.eras
+
+-----------------------------------------------------------------------------------------------------
+March 13, 2026
+
+    GitHub Dark Default
+    
