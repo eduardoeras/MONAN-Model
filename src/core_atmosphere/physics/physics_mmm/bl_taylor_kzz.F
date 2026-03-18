@@ -5,11 +5,13 @@ module bl_taylor_kzz
 
     implicit none
 
+    private
+
     public :: vertical_diffusivity
 
 contains
 
-    subroutine vertical_diffusivity(kzz, ustar, hpbl, sshfx, govrth, rho, cp ,karman , &
+    subroutine vertical_diffusivity(kzz, gamma, ustar, hpbl, sshfx, govrth, rho, cp ,karman , &
                                     its, ite, kts, kte, kpbl, za, itimestep)
 
         !-------------------------------------------------------------------------------!
@@ -107,6 +109,7 @@ contains
 
         ! Inputs
         real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                   kzz ! Vertical diffusivity [m^2/s]
+        real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                 gamma ! Counter-gradient [quantity * m/s]
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                 ustar ! Friction velocity
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                  hpbl ! PBL height
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                 sshfx ! Surface Sensible Heat Flux
@@ -198,8 +201,28 @@ contains
         do i = its, ite
             do k = kts, kpbl(i) - 1
 
+                ! Unstable PBL
+                if (trim(stability(i,k)) == 'UNSTABLE') then
+
+                    ! Convective velocity scale. References: 10, 11
+                    wstar(i) = (govrth(i) * wtheta(i) * hpbl(i)) ** (1.0 / 3.0)
+
+                    ! Nondimensional molecular dissipation rate. Reference: 12
+                    psi(i,k) = ((1.0 - zovrh(i,k)) ** 2.0 * &
+                               (- zovrl(i,k)) ** (-2.0 / 3.0) + &
+                               0.75) ** (3.0 / 2.0)
+
+                    ! Vertical diffusivity kzz. References: 10, 13
+                    kzz(i,k) = 0.15 * psi(i,k) ** (1.0/3.0) * &
+                               (1 - exp(- 4 * zovrh(i,k)) - &
+                               0.0003 * exp(8 * zovrh(i,k))) ** (4.0/3.0) * &
+                               wstar(i) * hpbl(i)
+                    
+                    ! Counter-gradient term gamma.
+                    call counter_gradient(gamma(i,k))
+
                 ! Stable PBL
-                if (trim(stability(i,k)) == 'STABLE') then
+                elseif (trim(stability(i,k)) == 'STABLE') then
 
                     ! Minnesota experiment. References: 7, 8
                     alpha_1 = 2.0
@@ -217,23 +240,6 @@ contains
                     kzz(i,k) = (ustar_local(i) * hpbl(i)) * &
                             0.33 * ((1.0 - zovrh(i,k)) ** (alpha_1 / 2.0)) * zovrh(i,k) / &
                             (1.0 + 3.7 * zovrh(i,k) * (hpbl(i) / lambda(i,k)))
-
-                ! Unstable PBL
-                elseif (trim(stability(i,k)) == 'UNSTABLE') then
-
-                    ! Convective velocity scale. References: 10, 11
-                    wstar(i) = (govrth(i) * wtheta(i) * hpbl(i)) ** (1.0 / 3.0)
-
-                    ! Nondimensional molecular dissipation rate. Reference: 12
-                    psi(i,k) = ((1.0 - zovrh(i,k)) ** 2.0 * &
-                               (- zovrl(i,k)) ** (-2.0 / 3.0) + &
-                               0.75) ** (3.0 / 2.0)
-
-                    ! Vertical diffusivity kzz. References: 10, 13
-                    kzz(i,k) = 0.15 * psi(i,k) ** (1.0/3.0) * &
-                               (1 - exp(- 4 * zovrh(i,k)) - &
-                               0.0003 * exp(8 * zovrh(i,k))) ** (4.0/3.0) * &
-                               wstar(i) * hpbl(i)
                     
                 ! Neutral PBL
                 else
@@ -258,15 +264,15 @@ contains
                 end if
 
                 ! DEBUG
-                write(debug_msg, "(A, F23.9, A, F23.9, A, F23.9, A, F23.9, A, F23.9, A, F23.9, A, A)" ) &
-                " zh = ", zovrh(i,k), &
-                ", sshfx = ", sshfx(i), &
-                ", ustar = ", ustar(i), &
-                ", ustar_local = ", ustar_local(i), &
-                ", lambda = ", lambda(i,k), &
-                ", kzz = ", kzz(i,k), &
-                ", stability = ", stability(i,k)
-                call mpas_log_write('[TAYLOR DEBUG]'//trim(debug_msg))
+                !write(debug_msg, "(A, F23.9, A, F23.9, A, F23.9, A, F23.9, A, F23.9, A, F23.9, A, A)" ) &
+                !" zh = ", zovrh(i,k), &
+                !", sshfx = ", sshfx(i), &
+                !", ustar = ", ustar(i), &
+                !", ustar_local = ", ustar_local(i), &
+                !", lambda = ", lambda(i,k), &
+                !", kzz = ", kzz(i,k), &
+                !", stability = ", stability(i,k)
+                !call mpas_log_write('[TAYLOR DEBUG]'//trim(debug_msg))
 
             end do
             
@@ -279,4 +285,30 @@ contains
 
     end subroutine vertical_diffusivity
 
+    subroutine counter_gradient(gamma)
+
+        !-------------------------------------------------------------------------------!
+        implicit none
+        !-------------------------------------------------------------------------------!
+        !                                                                               !
+        !   References:                                                                 !
+        !                                                                               !
+        !   (1) Campos Velho, H.F., et al. (1998). New parameterizations in RAMS for    !
+        !       vertical turbulent fluxes, p. 17                                        !
+        !                                                                               !
+        !   (2) Roberti, D.R., Campos Velho, H.F., & Degrazia, G.A. (2004). Identifying !
+        !       Counter-Gradient term in atmospheric convective boundary layer. Inverse !
+        !       Problems in Science & Engineering, 12(3), p. 330                        !
+        !                                                                               !
+        !   (3) Eras, E.R. (2024). Turbulence modeling based on Taylor's theory for     !
+        !       INPE's BAM model. PhD Thesis, INPE, p. 46-49                            !
+        !                                                                               !
+        !-------------------------------------------------------------------------------!
+
+        real(kind=kind_phys),intent(out  )   ::                                   gamma ! Counter-gradient [quantity * m/s]
+
+        ! DEBUG
+        call mpas_log_write('[TAYLOR DEBUG] Inside GAMMA function')
+
+    end subroutine counter_gradient
 end module bl_taylor_kzz
