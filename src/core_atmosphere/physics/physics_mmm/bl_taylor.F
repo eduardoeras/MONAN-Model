@@ -45,6 +45,27 @@
    implicit none
 !-------------------------------------------------------------------------------
 !
+!  The primary modification consists of replacing the YSU local eddy
+!  diffusivity formulation (K-profile; xkzm, xkzh, xkzq) within the PBL
+!  by an alternative vertical diffusivity computed from a Taylor-based
+!  turbulence closure (see vertical_diffusivity routine).
+!
+!  Additionally, the counter-gradient transport term used in convective
+!  boundary layers may be replaced or augmented by a Taylor-consistent
+!  formulation, while preserving the original YSU structure for stable
+!  conditions and above the PBL.
+!
+!  Therefore, this scheme can be interpreted as:
+!
+!     YSU dynamical framework  +  Taylor-based turbulence closure
+!
+!  The implementation maintains compatibility with the original implicit
+!  diffusion solver and overall MPAS/CCPP physics interface.
+!
+!
+!  Original YSU documentation (retained below):
+!-----------------------------------------------------------------------------
+!
 !     this code is a revised vertical diffusion package ("ysupbl")
 !     with a nonlocal turbulent mixing in the pbl after "mrfpbl".
 !     the ysupbl (hong et al. 2006) is based on the study of noh
@@ -339,8 +360,10 @@
    real(kind=kind_phys),     dimension( kts:kte+1) :: zq_1d
 
    !TAYLOR CODE!================================================================!
-   real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::     taylor_kzz
-   real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::          gamma
+   real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::     taylor_kzz_h ! eddy diffusivity for heat
+   real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::     taylor_kzz_q ! eddy diffusivity for moisture
+   real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::     taylor_kzz_m ! eddy diffusivity for momentum
+   real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::          gamma   ! nonlocal gradient term
 
 !DEBUG!=========================================================================!
    character(len=256) :: debug_msg
@@ -348,9 +371,242 @@
    real               :: debug_real
 !DEBUG!=========================================================================!
 
-
+!----------------------------------------------------------------------------------------------
+! Variable descriptions (AI generated):   
 !
-!-------------------------------------------------------------------------------
+!xkzminm: minimum background eddy diffusivity for momentum (Km)
+!xkzminh: minimum background eddy diffusivity for heat/moisture (Kh/Kq)
+!xkzmin: generic minimum diffusivity floor
+!xkzmax: maximum allowed eddy diffusivity cap
+!rimin: minimum Richardson number allowed in unstable branch
+!rlam: asymptotic mixing length scale (m)
+!prmin: minimum turbulent Prandtl number
+!prmax: maximum turbulent Prandtl number
+!brcr_ub: critical bulk Richardson number for unstable/convective BL detection
+!brcr_sb: default critical bulk Richardson number for stable BL
+!cori: representative Coriolis parameter
+!afac: empirical coefficient for counter-gradient thermal perturbation
+!bfac: empirical coefficient used in nonlocal gradient terms
+!pfac: exponent shaping momentum diffusivity vertical profile in PBL
+!pfac_q: exponent shaping scalar/moisture diffusivity profile
+!phifac: weight multiplying convective velocity scale contribution
+!sfcfrac: surface-layer fraction of PBL height
+!d1: linear coefficient for entrainment layer thickness delta
+!d2: convective/shear coefficient for delta
+!d3: buoyancy scaling coefficient for delta
+!h1: one-third exponent (1/3) used in velocity scales
+!h2: two-thirds exponent (2/3) used in velocity scales
+!zfmin: tiny floor to avoid zero/negative profile factors
+!aphi5: stable-similarity constant
+!aphi16: unstable-similarity constant
+!tmin: minimum thermal difference threshold for numerical stability
+!gamcrt: cap for nonlocal potential temperature gradient term
+!gamcrq: cap for nonlocal moisture gradient term
+!xka: molecular thermal diffusivity (background physical constant)
+!imvdif: switch for moist-virtual correction in free-atmosphere diffusion
+!rcl: cloud-related scaling constant for momentum surface flux conversion
+!kts: first vertical model index (parameterized here as 1)
+!kms: first mass-level index (parameterized here as 1)
+!its, ite: horizontal start/end indices for i-loop tile
+!kte: top vertical index for scalar levels
+!kme: top index for interface levels used by p2di
+!ysu_topdown_pblmix: switch enabling top-down cloud/radiative PBL mixing path
+!nmix: number of extra tracers/passive species to diffuse
+!dt: timestep (s)
+!cp: specific heat at constant pressure
+!g: gravity acceleration
+!rovcp: R_d/cp
+!rovg: R_d/g
+!rd: dry-air gas constant
+!xlv: latent heat of vaporization
+!rv: water-vapor gas constant
+!ep1, ep2: moist thermodynamic constants (Rv/Rd - 1, Rd/Rv)
+!karman: von Kármán constant
+!f_qc: flag for cloud-water diffusion
+!f_qi: flag for cloud-ice diffusion
+!dz8w2d: layer thickness (full/model layer depth)
+!pi2d: Exner function
+!tx: temperature
+!qvx: water vapor mixing ratio
+!qcx: cloud water mixing ratio
+!qix: cloud ice mixing ratio
+!qmix: generic tracer array to be vertically mixed
+!utnp, vtnp: momentum tendencies (u, v)
+!ttnp: temperature tendency
+!qvtnp, qctnp, qitnp: moisture tendencies (vapor/cloud water/cloud ice)
+!qmixtnp: tendencies for generic tracers
+!p2di: pressure at interfaces
+!p2d: pressure at mass levels
+!hpbl: diagnosed PBL height
+!ust: friction velocity (u*)
+!znt: roughness length
+!xland: land/sea mask
+!hfx: sensible heat flux
+!qfx: moisture flux
+!wspd: near-surface wind speed magnitude
+!br: surface bulk Richardson number
+!psim, psih: Monin-Obukhov similarity functions (momentum/heat)
+!psfcpa: surface pressure
+!kpbl1d: output PBL top level index
+!ux, vx: horizontal wind components
+!rthraten: radiative heating rate
+!ctopo, ctopo2: optional topographic correction factors
+!flag_bep: enables BEP/BEM urban forcing pathway
+!a_u, a_v, a_t, a_q, a_e: optional implicit urban forcing coefficients
+!b_u, b_v, b_t, b_q, b_e: optional explicit urban forcing/source coefficients
+!sfk: urban scaling factor for diffusion timestep coupling
+!vlk: urban scaling denominator for matrix coefficients
+!dlu, dlg: optional urban drag/length-like tuning inputs
+!frcurb: urban fractional coverage
+!errmsg: status message
+!errflg: status/error flag
+!itimestep: model timestep counter
+!exch_hx: output exchange coefficient for heat/scalars
+!exch_mx: output exchange coefficient for momentum
+!u10, v10: 10-m winds (updated in-place)
+!uox, vox: optional background/ocean/surface-relative winds
+!hol: Monin-Obukhov stability length scale helper array
+!zq: height at half levels/interfaces above ground
+!thx: potential temperature
+!thvx: virtual potential temperature
+!thlix: liquid-ice potential temperature proxy
+!del: pressure thickness between interfaces
+!dza: full-level vertical spacing
+!dzq: layer thickness from interface heights
+!xkzom: background momentum diffusivity profile
+!xkzoh: background scalar diffusivity profile
+!za: full-level geometric height
+!rhox: air density near surface/full level context
+!govrth: g/theta scaling used in buoyancy terms
+!zl1: first model-layer height
+!thermal: reference thermal profile for bulk-Ri PBL search
+!wscale: blended turbulent velocity scale
+!hgamt: nonlocal temperature gradient term
+!hgamq: nonlocal moisture gradient term
+!brdn, brup: lower/upper bulk Richardson values during PBL-top bracketing
+!phim, phih: stability correction factors used in surface-layer scaling
+!dusfc, dvsfc: integrated surface momentum tendencies
+!dtsfc, dqsfc: integrated surface heat/moisture tendencies
+!prpbl: PBL Prandtl-like scaling for entrainment in momentum
+!wspd1: near-surface wind relative to optional background flow
+!thermalli: theta_li-based reference profile for top-down extension
+!xkzh, xkzm, xkzq: working diffusivities for heat, momentum, moisture
+!f1, f2: RHS/solution work arrays in tridiagonal solves
+!r1, r2: saved RHS arrays for tridiagonal solves
+!ad, au, al: diagonal, upper, lower tridiagonal coefficients
+!cu: copied upper-diagonal work array
+!zfac: normalized height factor inside PBL
+!rhox2: density profile over all levels
+!hgamt2: additional nonlocal thermal gradient from top-down radiative pathway
+!ad1: second diagonal for coupled momentum solve!
+!adm: auxiliary matrix array (declared, little/no use in shown code)
+!adv: vapor-equation diagonal with optional urban forcing applied
+!uoxl, voxl: local copies/defaulted versions of optional uox/vox
+!brcr: active critical bulk Richardson threshold per column
+!sflux: total buoyancy flux proxy at surface
+!zol1: nondimensional z/L at first level
+!brcr_sbro: sea-based stability-adjusted critical Richardson number
+!r3, f3: extra workspace arrays (declared for auxiliary solve paths)
+!kpbl, kpblold: current and previous/temporary PBL top level index
+!pblflg: flag indicating active convective/nonlocal PBL processing
+!sfcflg: flag for unstable/convective surface forcing regime
+!stable: logical flag used in Ri scans and regime switching
+!cloudflg: flag indicating cloudy PBL top-down entrainment treatment
+!definebrup: helper flag controlling brup/brdn overwrite logic
+!n, i, k, l, ic, is, kk: loop and temporary integer indices (ic/is appear reserved/legacy)
+!klpbl: effective top index used in PBL loops
+!dt2: doubled timestep (2*dt)
+!rdt: inverse of dt2
+!spdk2: squared wind magnitude floor for Ri computations
+!fm, fh: transferred similarity-function values
+!hol1: local stability argument for similarity functions
+!gamfac: coefficient converting fluxes to nonlocal gradient terms
+!vpert: virtual potential temperature perturbation
+!prnum, prnum0: local and baseline turbulent Prandtl numbers
+!ss: shear-squared term
+!ri: gradient Richardson number
+!qmean, tmean: layer mean moisture/temperature for moist correction
+!alph, chi: moist correction coefficients in Ri adjustment
+!zk: height-scaled mixing-length numerator (kappa*z)
+!rl2: squared effective mixing length
+!dk: base diffusivity magnitude before stability functions
+!sri: sqrt(-ri) helper for unstable formula
+!brint: interpolation factor for PBL-top crossing
+!dtodsd, dtodsu: timestep over pressure-thickness factors (down/up layers)
+!rdz: inverse vertical spacing
+!dsdzt, dsdzq: nonlocal source terms for heat/moisture equations
+!dsdz2: local diffusive operator coefficient
+!rlamdz: effective asymptotic mixing length limited by dz
+!utend, vtend, ttend, qtend: recovered tendencies after implicit solve
+!dtstep: local timestep copy
+!govrthv: g/theta_v for buoyancy in free atmosphere
+!cont, conq, conw, conwrc: unit-conversion constants for integrated tendencies
+!wscalek: in-PBL local velocity scale profile
+!wscalek2: top-down/radiative supplemental velocity scale profile
+!wstar: convective velocity scale output
+!delta: entrainment-layer thickness output
+!xkzml, xkzhl: saved free-atmosphere/background Km/Kh references!
+!zfacent: entrainment shape function near PBL top
+!entfac: nondimensional entrainment distance parameter
+!qcxl, qixl: local cloud condensate copies (or zeros if not active)
+!ust3: ust^3!
+!wstar3: convective velocity scale cubed
+!wstar3_2: additional top-driven convective velocity scale cubed
+!hgamu, hgamv: nonlocal momentum gradient terms
+!wm2: turbulent velocity scale squared-like metric (wm3^(2/3))
+!we: entrainment velocity at PBL top
+!bfxpbl: entrainment buoyancy flux at PBL top
+!hfxpbl, qfxpbl: entrainment heat/moisture flux jumps
+!ufxpbl, vfxpbl: entrainment momentum flux jumps
+!dthvx: jump in virtual potential temperature across inversion
+!prnumfac: exponent factor used to vary Prandtl number with height
+!bfx0, hfx0, qfx0: clipped surface buoyancy/sensible/latent buoyancy terms
+!delb: buoyancy scaling denominator for entrainment thickness
+!dux, dvx: wind jumps across inversion
+!dsdzu, dsdzv: nonlocal source terms for momentum equations
+!wm3: combined velocity-scale cube (w*^3 + shear term)
+!dthx: potential temperature jump near PBL top
+!dqx: moisture jump near PBL top
+!wspd10: 10-m wind speed magnitude
+!ross: Rossby-like ratio used in over-water brcr tuning
+!tem1: temporary coefficient in diffusion operator assembly
+!dsig: pressure difference between adjacent levels
+!tvcon: virtual temperature conversion factor
+!conpr: constant scaling for near-surface Prandtl adjustment
+!prfac, prfac2: additive Prandtl modifiers in unstable conditions
+!phim8z: stability function at height z
+!radsum: accumulated radiative cooling within PBL
+!tmp1: temporary ratio for entrainment-efficiency estimate
+!templ, temps: intermediate temperatures in cloud/radiative block
+!rvls: saturation vapor mixing-ratio estimate
+!ent_eff: entrainment efficiency factor
+!rcldb: cloud-water excess used in entrainment tuning
+!bruptmp: temporary bulk-Ri during theta_li-based extension
+!radflux: layer radiative flux contribution
+!vconvlim, vconvnew: limited and candidate convective-velocity corrections
+!fluxc: convective surface buoyancy flux
+!vconvc: empirical multiplier for vconv
+!vconv: convective velocity scale used in topo-correction logic
+!fric: friction-related coefficient in momentum lower boundary treatment
+!tke_ysu: diagnostic TKE-like field for hybrid PBLH diagnosis
+!el_ysu: effective mixing length for TKE estimate
+!shear_ysu: shear production term
+!buoy_ysu: buoyancy production/destruction term
+!pblh_ysu: diagnostic PBLH from hybrid theta_v/TKE method
+!vconvfx: stored convective-velocity correction per column
+!bepswitch: scalar switch (0/1) enabling urban BEP/BEM source path
+!a_u2d, a_v2d, a_t2d, a_q2d, a_e2d: local 2D copies of optional implicit urban coefficients
+!b_u2d, b_v2d, b_t2d, b_q2d, b_e2d: local 2D copies of optional explicit urban coefficients
+!sfk2d, vlk2d, dlu2d, dlg2d: local 2D copies of optional urban scaling/drag inputs
+!frc_urb1d: local 1D copy of urban fraction
+!thvx_1d, tke_1d, dzq_1d: column 1D scratch arrays for get_pblh
+!zq_1d: interface-height 1D scratch array for get_pblh
+!taylor_kzz_h, taylor_kzz_q, taylor_kzz_m: custom Taylor-scheme vertical diffusivity profiles for heat, moisture, and momentum
+!gamma: stability-classification/auxiliary output from vertical_diffusivity
+!debug_msg: formatted debug string for logging
+!debug_int: debug integer placeholder
+!debug_real: debug real placeholder
+!----------------------------------------------------------------------------------------------
 !
    klpbl = kte
 !
@@ -1006,34 +1262,57 @@
 
    !TAYLOR CODE!=======================================================!
 
-   call vertical_diffusivity(taylor_kzz, gamma, ust, hpbl, hfx, govrth, rhox, cp ,karman ,   &
-                             its, ite, kts, kte, kpbl, za, itimestep)
+   call vertical_diffusivity(taylor_kzz_h, taylor_kzz_q, taylor_kzz_m, gamma, ust, hpbl, hfx, govrth, rhox, cp ,karman ,   &
+                             its, ite, kts, kte, kpbl, za, cori, itimestep)
 
    !DEBUG!=============================================================!
-    write(debug_msg, "(I10)" ) itimestep
-    if (itimestep .eq. 200) then
-      call mpas_log_write('!DEBUG XKZM!=============================================================!')
-      do k = kts,kte-1
-          write(debug_msg, '(F16.8)') xkzm(its,k)
-          call mpas_log_write('[TAYLOR DEBUG]  xkzm = '//debug_msg)
+   if (MOD(itimestep, 1000) .eq. 0) then
+    do i = its,ite
+      do k = kts,kpbl(i)-1
+          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)
+          call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
+          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzh = ", xkzh(i,k), ", zh = ", za(i,k)/hpbl(i)
+          call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
+          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzq = ", xkzq(i,k), ", zh = ", za(i,k)/hpbl(i)
+          call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
       enddo
-      call mpas_log_write('!DEBUG XKZH!=============================================================!')
-      do k = kts,kte-1
-          write(debug_msg, '(F16.8)') xkzh(its,k)
-          call mpas_log_write('[TAYLOR DEBUG]  xkzh = '//debug_msg)
-      enddo
-      call mpas_log_write('!DEBUG XKZQ!=============================================================!')
-      do k = kts,kte-1
-          write(debug_msg, '(F16.8)') xkzq(its,k)
-          call mpas_log_write('[TAYLOR DEBUG]  xkzq = '//debug_msg)
-      enddo
-      call mpas_log_write('!DEBUG taylor_kzz!=======================================================!')
-      do k = kts,kte-1
-          write(debug_msg, '(F16.8)') taylor_kzz(its,k)
-          call mpas_log_write('[TAYLOR DEBUG]  taylor_kzz = '//debug_msg)
-      enddo
-    end if
+    enddo
+   end if
    !DEBUG!=============================================================!
+
+   !================================================================!
+   ! Replacing the original diffusivity with the Taylor diffusivity !
+   ! The Taylor diffusivity is added to the original diffusivity,   !
+   ! and then capped at xkzmax.                                     !
+   !================================================================!
+   
+   do i = its,ite
+     do k = kts,kte-1
+       xkzh(i,k) = taylor_kzz_h(i,k) + xkzoh(i,k)
+       xkzq(i,k) = taylor_kzz_q(i,k) + xkzoh(i,k)
+       xkzm(i,k) = taylor_kzz_m(i,k) + xkzom(i,k)
+       xkzm(i,k) = min(xkzm(i,k),xkzmax)
+       xkzh(i,k) = min(xkzh(i,k),xkzmax)
+       xkzq(i,k) = min(xkzq(i,k),xkzmax)
+     enddo
+   enddo
+
+   !DEBUG!=============================================================!
+   if (MOD(itimestep, 1000) .eq. 0) then
+    do i = its,ite
+      do k = kts,kpbl(i)-1
+          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)
+          call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
+          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzh = ", xkzh(i,k), ", zh = ", za(i,k)/hpbl(i)
+          call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
+          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzq = ", xkzq(i,k), ", zh = ", za(i,k)/hpbl(i)
+          call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
+      enddo
+    enddo
+   end if
+   !DEBUG!=============================================================!
+
+   !================================================================!
 !
 !     compute tridiagonal matrix elements for heat
 !
