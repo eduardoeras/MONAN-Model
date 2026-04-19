@@ -1266,18 +1266,18 @@
                              its, ite, kts, kte, kpbl, za, cori, itimestep)
 
    !DEBUG!=============================================================!
-   if (MOD(itimestep, 1000) .eq. 0) then
-    do i = its,ite
-      do k = kts,kpbl(i)-1
-          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)
-          call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
-          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzh = ", xkzh(i,k), ", zh = ", za(i,k)/hpbl(i)
-          call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
-          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzq = ", xkzq(i,k), ", zh = ", za(i,k)/hpbl(i)
-          call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
-      enddo
-    enddo
-   end if
+   !if (MOD(itimestep, 1000) .eq. 0) then
+   ! do i = its,ite
+   !   do k = kts,kpbl(i)-1
+   !       write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)
+   !       call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
+   !       write(debug_msg, '(A, F23.9, A, F23.9)') "xkzh = ", xkzh(i,k), ", zh = ", za(i,k)/hpbl(i)
+   !       call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
+   !       write(debug_msg, '(A, F23.9, A, F23.9)') "xkzq = ", xkzq(i,k), ", zh = ", za(i,k)/hpbl(i)
+   !       call mpas_log_write('[DEBUG ORIGINAL]  '//trim(debug_msg))
+   !   enddo
+   ! enddo
+   !end if
    !DEBUG!=============================================================!
 
    !================================================================!
@@ -1298,18 +1298,18 @@
    enddo
 
    !DEBUG!=============================================================!
-   if (MOD(itimestep, 1000) .eq. 0) then
-    do i = its,ite
-      do k = kts,kpbl(i)-1
-          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)
-          call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
-          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzh = ", xkzh(i,k), ", zh = ", za(i,k)/hpbl(i)
-          call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
-          write(debug_msg, '(A, F23.9, A, F23.9)') "xkzq = ", xkzq(i,k), ", zh = ", za(i,k)/hpbl(i)
-          call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
-      enddo
-    enddo
-   end if
+   !if (MOD(itimestep, 1000) .eq. 0) then
+   ! do i = its,ite
+   !   do k = kts,kpbl(i)-1
+   !       write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)
+   !       call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
+   !       write(debug_msg, '(A, F23.9, A, F23.9)') "xkzh = ", xkzh(i,k), ", zh = ", za(i,k)/hpbl(i)
+   !       call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
+   !       write(debug_msg, '(A, F23.9, A, F23.9)') "xkzq = ", xkzq(i,k), ", zh = ", za(i,k)/hpbl(i)
+   !       call mpas_log_write('[DEBUG UPDATED]  '//trim(debug_msg))
+   !   enddo
+   ! enddo
+   !end if
    !DEBUG!=============================================================!
 
    !================================================================!

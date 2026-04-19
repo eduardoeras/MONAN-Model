@@ -421,26 +421,26 @@ contains
         !------------------------------------------------------------------------ DEBUG ! 
 
         ! DEBUG ------------------------------------------------------------------------!
-        do i = its, ite
-            do k = kts, kpbl(i) - 1
-                if (trim(stability(i,k)) .eq. 'STABLE'.and. MOD(itimestep, debug_itimestep) .ne. 0) then
-                    cycle
-                end if
-                write(debug_msg, "(A, F23.9, &
-                                A, F23.9, &
-                                A, F23.9, &
-                                A, F23.9, &
-                                A, F23.9, &
-                                A, A)" ) &
-                " zh = ", zovrh(i,k), &
-                ", kzz_h = ", kzz_h(i,k), &
-                ", kzz_q = ", kzz_q(i,k), &
-                ", kzz_m = ", kzz_m(i,k), &
-                ", prandtl = ", prandtl(i,k), &
-                ", stability = ", stability(i,k)
-                call mpas_log_write('[TAYLOR DEBUG]'//trim(debug_msg))
-            end do
-        end do
+        !do i = its, ite
+        !    do k = kts, kpbl(i) - 1
+        !        if (trim(stability(i,k)) .eq. 'STABLE'.and. MOD(itimestep, debug_itimestep) .ne. 0) then
+        !            cycle
+        !        end if
+        !        write(debug_msg, "(A, F23.9, &
+        !                        A, F23.9, &
+        !                        A, F23.9, &
+        !                        A, F23.9, &
+        !                        A, F23.9, &
+        !                        A, A)" ) &
+        !        " zh = ", zovrh(i,k), &
+        !        ", kzz_h = ", kzz_h(i,k), &
+        !        ", kzz_q = ", kzz_q(i,k), &
+        !        ", kzz_m = ", kzz_m(i,k), &
+        !        ", prandtl = ", prandtl(i,k), &
+        !        ", stability = ", stability(i,k)
+        !        call mpas_log_write('[TAYLOR DEBUG]'//trim(debug_msg))
+        !    end do
+        !end do
         !------------------------------------------------------------------------ DEBUG ! 
 
     end subroutine vertical_diffusivity
@@ -502,7 +502,7 @@ contains
         real(kind=kind_phys), parameter ::    fm_w = 0.33     ! Frequency of the spectral peak for neutral conditions. Reference (6, 5).
    
         ! DEBUG ------------------------------------------------------------------------!
-        call mpas_log_write('[TAYLOR DEBUG] Inside GAMMA function')
+        !call mpas_log_write('[TAYLOR DEBUG] Inside GAMMA function')
         !------------------------------------------------------------------------ DEBUG ! 
         
         ! kolmogorov exponent. Reference: 7

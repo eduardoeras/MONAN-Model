@@ -391,7 +391,7 @@
 !
 
       !DEBUG!=============================================================!
-      call mpas_log_write('[TAYLOR DEBUG] before call bl_taylor_run')
+      !call mpas_log_write('[TAYLOR DEBUG] before call bl_taylor_run')
       !DEBUG!=============================================================!
 
       call bl_taylor_run(ux=u3d_hv,vx=v3d_hv                                   &

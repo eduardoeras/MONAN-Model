@@ -797,10 +797,10 @@
 
  pbl_select: select case (trim(pbl_scheme))
     case("bl_mynn")
-       call mpas_log_write('--- enter subroutine bl_mynn_init:')
+       call mpas_log_write('[TAYLOR DEBUG] --- enter subroutine bl_mynn_init:')
        call bl_mynn_init(cp,cpv,cice,cliq,ep_1,ep_2,gravity,karman,P0,R_d,R_v,svp1,svp2,svp3,svpt0, &
                          xlf,xls,xlv,errmsg,errflg)
-       call mpas_log_write('--- end subroutine bl_mynn_mpas_init:')
+       call mpas_log_write('[TAYLOR DEBUG] --- end subroutine bl_mynn_mpas_init:')
     case('bl_taylor')
        !DEBUG!===============================================================================================================================================!
        call mpas_log_write('[TAYLOR DEBUG] taylor select-case : '//trim(pbl_scheme))
@@ -809,7 +809,6 @@
        !DEBUG!===============================================================================================================================================!
        call mpas_log_write('[TAYLOR DEBUG] default select-case : '//trim(pbl_scheme))
        !DEBUG!===============================================================================================================================================!
-
 
  end select pbl_select
 
