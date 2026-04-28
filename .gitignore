@@ -1,7 +1,7 @@
 # Compiling output logs and scripts
 *.output.init_atmosphere
 *.output.atmosphere
-*.sh
+#*.sh
 inc
 
 # Namelists
