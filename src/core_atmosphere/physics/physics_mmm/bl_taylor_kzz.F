@@ -11,7 +11,7 @@ module bl_taylor_kzz
 
 contains
 
-    subroutine vertical_diffusivity(kzz_h, kzz_q, kzz_m, gamma, ustar, hpbl, sshfx, govrth, rho, cp ,karman , &
+    subroutine vertical_diffusivity(kzz_h, kzz_q, kzz_m, gamma, stability_flag, ustar, hpbl, sshfx, govrth, rho, cp ,karman , &
                                     its, ite, kts, kte, kpbl, za, cori, itimestep)
 
         !-------------------------------------------------------------------------------!
@@ -139,6 +139,7 @@ contains
         real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                 kzz_q ! Vertical diffusivity for moisture [m^2/s]
         real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                 kzz_m ! Vertical diffusivity for momentum [m^2/s]
         real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                 gamma ! Counter-gradient [quantity * m/s]
+        integer,              dimension( its:ite, kts:kte ), intent(out  )   ::        stability_flag ! PBL stability flag: -1=UNSTABLE, 0=NEUTRAL, 1=STABLE
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                 ustar ! Friction velocity
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                  hpbl ! PBL height
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                 sshfx ! Surface Sensible Heat Flux
@@ -163,7 +164,7 @@ contains
         real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                 zovrl ! Stability parameter
         real(kind=kind_phys), dimension( its:ite )                           ::                wtheta ! Surface kinematic heat flux [k m s^{-1}]
         real(kind=kind_phys), dimension( its:ite )                           ::                 wstar ! Local Convective velocity scale
-        real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                   psi ! Nondimensional molecular dissipation rate
+       !real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                   psi ! Nondimensional molecular dissipation rate
         real(kind=kind_phys), dimension( its:ite )                           ::           ustar_local ! Range limited friction velocity
         real(kind=kind_phys)                                                 ::             sshfx_min ! Surface Sensible Heat Flux lower threshold
         real(kind=kind_phys)                                                 ::            lambda_max ! Local Monin-Obukhov length top threshold
@@ -175,7 +176,6 @@ contains
         real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::               prandtl ! Prandtl number
         real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                 phi_h ! Dimensionless gradients of heat
         real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                 phi_m ! Dimensionless gradients of momentum
-        real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                     C ! Troen - Mahrt constant
 
         integer                                                              ::                  i, k
         character(len=512)                                                   ::             debug_msg
@@ -240,6 +240,13 @@ contains
             end do
         end do
 
+        ! Initialize stability_flag to 0 (NEUTRAL) for all levels
+        do i = its, ite
+            do k = kts, kte
+                stability_flag(i,k) = 0
+            end do
+        end do
+
         ! PBL stability condition. Reference: 2
         ! Threshold value set by empirical studies.
         stability_threshold = 0.005
@@ -247,10 +254,13 @@ contains
             do k = kts, kpbl(i) - 1
                 if (zovrl(i,k) .lt. -stability_threshold) then
                     stability(i,k) = 'UNSTABLE'
+                    stability_flag(i,k) = -1
                 else if (zovrl(i,k) .gt. stability_threshold) then
                     stability(i,k) = 'STABLE'
+                    stability_flag(i,k) = 1
                 else
                     stability(i,k) = 'NEUTRAL'
+                    stability_flag(i,k) = 0
                 end if
             end do
         end do
@@ -431,12 +441,20 @@ contains
                                 A, F23.9, &
                                 A, F23.9, &
                                 A, F23.9, &
+                                A, F23.9, &
+                                A, F23.9, &
+                                A, F23.9, &
+                                A, F23.9, &
                                 A, A)" ) &
                 " zh = ", zovrh(i,k), &
-                ", kzz_h = ", kzz_h(i,k), &
-                ", kzz_q = ", kzz_q(i,k), &
-                ", kzz_m = ", kzz_m(i,k), &
-                ", prandtl = ", prandtl(i,k), &
+                ", kzz_h = ",  kzz_h(i,k), &
+                ", kzz_q = ",  kzz_q(i,k), &
+                ", kzz_m = ",  kzz_m(i,k), &
+                ", L = ",      L(i), &
+                ", lambda = ", lambda(i,k), &
+                ", zovrl = ", zovrl(i,k), &
+                ", wtheta = ", wtheta(i), &
+                ", wstar = ", wstar(i), &
                 ", stability = ", stability(i,k)
                 call mpas_log_write('[TAYLOR DEBUG]'//trim(debug_msg))
             end do

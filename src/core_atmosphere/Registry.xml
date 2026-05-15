@@ -1045,6 +1045,7 @@
 			<var name="updraft_helicity_max"/>
 			<var name="w_velocity_max"/>
 			<var name="wind_speed_level1_max"/>
+			<var name="stability_flag"/>
                         <!-- End convective diagnostics defined in diagnostics/Registry_convective.xml -->
 
 #ifdef DO_PHYSICS
@@ -2547,6 +2548,10 @@
 		<var name="kzq" type="real" dimensions="nVertLevels nCells Time" units="m^{2} s^{-1}"
                      description="vertical diffusion coefficient of water vapor and cloud condensates"
                      packages="bl_mynn_in;bl_taylor_in;bl_ysu_in"/>
+
+		<var name="stability_flag" type="integer" dimensions="nVertLevels nCells Time" units="unitless"
+                     description="PBL stability flag: -1=UNSTABLE, 0=NEUTRAL, 1=STABLE"
+                     packages="bl_taylor_in"/>
 
 
                 <!-- YSU PBL SCHEME: -->

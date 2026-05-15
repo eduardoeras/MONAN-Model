@@ -448,6 +448,9 @@
     kzm_p,            &!
     kzq_p              !
 
+ integer,dimension(:,:,:),allocatable:: &
+    stability_flag_p   ! PBL stability flag: -1=UNSTABLE, 0=NEUTRAL, 1=STABLE (bl_taylor only)
+
 !... MYNN PBL scheme (module_bl_mynn.F):
  integer,parameter:: spp_pbl   = 0          !generate array with random perturbations (0=off,1=on).
  integer,parameter:: icloud_bl = 0          !no coupling of subgrid-scale clouds with radiation.

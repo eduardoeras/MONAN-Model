@@ -150,6 +150,7 @@
        if(.not.allocated(v10_p)         ) allocate(v10_p(ims:ime,jms:jme)               )
        if(.not.allocated(exch_p)        ) allocate(exch_p(ims:ime,kms:kme,jms:jme)      )
        if(.not.allocated(wstar_p)       ) allocate(wstar_p(ims:ime,jms:jme)             )
+       if(.not.allocated(stability_flag_p)) allocate(stability_flag_p(ims:ime,kms:kme,jms:jme))
 
     case("bl_mynn")
        if(.not.allocated(kbl_plume_p)   ) allocate(kbl_plume_p(ims:ime,jms:jme)         )
@@ -271,6 +272,7 @@
        if(allocated(v10_p)         ) deallocate(v10_p         )
        if(allocated(exch_p)        ) deallocate(exch_p        )
        if(allocated(wstar_p)       ) deallocate(wstar_p       )
+       if(allocated(stability_flag_p)) deallocate(stability_flag_p)
 
     case("bl_mynn")
        if(allocated(kbl_plume_p)   ) deallocate(kbl_plume_p   )
@@ -473,6 +475,7 @@
        do k = kts,kte
        do i = its,ite
           exch_p(i,k,j) = 0._RKIND
+          stability_flag_p(i,k,j) = 0
        enddo
        enddo
        enddo
@@ -615,6 +618,9 @@
 !local pointers for YSU scheme:
  real(kind=RKIND),dimension(:,:),pointer:: exch_h
 
+!local pointers for Taylor scheme:
+ integer,dimension(:,:),pointer:: stability_flag
+
 !local pointers for MYNN scheme:
  real(kind=RKIND),dimension(:),pointer  :: delta,wstar
  real(kind=RKIND),dimension(:,:),pointer:: cov,qke,qsq,tsq,sh3d,sm3d,tke_pbl,qke_adv,el_pbl,dqke,qbuoy, &
@@ -684,9 +690,10 @@
        enddo
 
     case("bl_taylor")
-       call mpas_pool_get_array(diag_physics,'delta',delta  )
-       call mpas_pool_get_array(diag_physics,'wstar' ,wstar )
-       call mpas_pool_get_array(diag_physics,'exch_h',exch_h)
+       call mpas_pool_get_array(diag_physics,'delta'         ,delta         )
+       call mpas_pool_get_array(diag_physics,'wstar'         ,wstar         )
+       call mpas_pool_get_array(diag_physics,'exch_h'        ,exch_h        )
+       call mpas_pool_get_array(diag_physics,'stability_flag',stability_flag)
 
        do j = jts,jte
        do i = its,ite
@@ -696,6 +703,7 @@
        do k = kts,kte
        do i = its,ite
           exch_h(k,i) = exch_p(i,k,j)
+          stability_flag(k,i) = stability_flag_p(i,k,j)
        enddo
        enddo
        enddo
@@ -938,7 +946,8 @@
                  ids = ids , ide = ide , jds = jds , jde = jde , kds = kds , kde = kde  , &
                  ims = ims , ime = ime , jms = jms , jme = jme , kms = kms , kme = kme  , &
                  its = its , ite = ite , jts = jts , jte = jte , kts = kts , kte = kte  , &
-                 itimestep = itimestep                                                    &
+                 itimestep = itimestep                                                    , &
+                 stability_flag = stability_flag_p                                         &
                 )
        call mpas_timer_stop('bl_taylor')
 

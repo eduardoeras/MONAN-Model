@@ -38,7 +38,8 @@
                   ids,ide, jds,jde, kds,kde,                                   &
                   ims,ime, jms,jme, kms,kme,                                   &
                   its,ite, jts,jte, kts,kte,                                   &
-                  errmsg,errflg,itimestep                                      &
+                  errmsg,errflg,itimestep,                                     &
+                  stability_flag                                               &
                  )
 !-------------------------------------------------------------------------------
   implicit none
@@ -228,6 +229,9 @@
    character(len=*), intent(out)   ::                                  errmsg
    integer,          intent(out)   ::                                  errflg
    integer,intent(in)              ::                               itimestep
+!  Output: PBL stability flag for each vertical level
+   integer, dimension( ims:ime, kms:kme, jms:jme )                          , &
+            intent(out  )          ::                            stability_flag
 !local
    integer ::  i,j,k
 
@@ -263,6 +267,8 @@
                                                              exch_h_hv   , &
                                                              exch_m_hv   , &
                                                              rthraten_hv
+
+   integer,                dimension(its:ite,kts:kte)      :: stability_flag_hv
 
    real(kind=kind_phys),   dimension(its:ite,kts:kte)      ::              &
                                                              a_u_hv      , &
@@ -432,6 +438,7 @@
               ,its=its,ite=ite,kte=kte,kme=kme                                 &
               ,errmsg=errmsg,errflg=errflg                                     &
               ,itimestep=itimestep                                             &                
+              ,stability_flagx=stability_flag_hv                              &
               )
 !
       !  Assign local data back to full-sized arrays.
@@ -459,6 +466,7 @@
             rqiblten(i,k,j) = rqiblten_hv(i,k)
             exch_h(i,k,j) = exch_h_hv(i,k)
             exch_m(i,k,j) = exch_m_hv(i,k)
+            stability_flag(i,k,j) = stability_flag_hv(i,k)
          end do
       end do
 

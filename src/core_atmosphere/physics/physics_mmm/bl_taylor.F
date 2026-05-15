@@ -39,7 +39,8 @@
                          flag_bep,                                         &
                          its,ite,kte,kme,                                  &
                          errmsg,errflg,                                    &
-                         itimestep                                         &
+                         itimestep,                                        &
+                         stability_flagx                                   &
                         )
 !-------------------------------------------------------------------------------
    implicit none
@@ -238,6 +239,9 @@
 
    integer,          intent(in)    ::                               itimestep
 
+   integer,          dimension( its:ite, kts:kte )                           , &
+             intent(out  )   ::                               stability_flagx
+
 !
 ! local vars
 !
@@ -364,11 +368,10 @@
    real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::     taylor_kzz_q ! eddy diffusivity for moisture
    real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::     taylor_kzz_m ! eddy diffusivity for momentum
    real(kind=kind_phys),     dimension( its:ite, kts:kte )    ::          gamma   ! nonlocal gradient term
+   integer,                  dimension( its:ite, kts:kte )    :: taylor_stab_flag ! PBL stability flag (-1/0/1)
 
 !DEBUG!=========================================================================!
    character(len=256) :: debug_msg
-   integer            :: debug_int
-   real               :: debug_real
 !DEBUG!=========================================================================!
 
 !----------------------------------------------------------------------------------------------
@@ -604,8 +607,6 @@
 !taylor_kzz_h, taylor_kzz_q, taylor_kzz_m: custom Taylor-scheme vertical diffusivity profiles for heat, moisture, and momentum
 !gamma: stability-classification/auxiliary output from vertical_diffusivity
 !debug_msg: formatted debug string for logging
-!debug_int: debug integer placeholder
-!debug_real: debug real placeholder
 !----------------------------------------------------------------------------------------------
 !
    klpbl = kte
@@ -1262,11 +1263,13 @@
 
    !TAYLOR CODE!=======================================================!
 
-   call vertical_diffusivity(taylor_kzz_h, taylor_kzz_q, taylor_kzz_m, gamma, ust, hpbl, hfx, govrth, rhox, cp ,karman ,   &
+   call vertical_diffusivity(taylor_kzz_h, taylor_kzz_q, taylor_kzz_m, gamma, taylor_stab_flag, ust, hpbl, hfx, govrth, rhox, cp ,karman ,   &
                              its, ite, kts, kte, kpbl, za, cori, itimestep)
 
+   stability_flagx = taylor_stab_flag
+
    !DEBUG!=============================================================!
-   !if (MOD(itimestep, 1000) .eq. 0) then
+   if (MOD(itimestep, 1000) .eq. 0) then
     do i = its,ite
       do k = kts,kpbl(i)-1
           write(debug_msg, '(A, F23.9, A, F23.9)') "xkzm = ", xkzm(i,k), ", zh = ", za(i,k)/hpbl(i)

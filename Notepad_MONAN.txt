@@ -83,3 +83,18 @@ April 02, 2026
 -----------------------------------------------------------------------------------------------------
 April 06, 2026
 
+-----------------------------------------------------------------------------------------------------
+April 28, 2026
+
+    Variables to evaluate:
+        Kzz         vertical diffusivity
+        L           Monin-Obukhov length
+        lambda      Local Monin-Obukhov length
+        zovrl       Dimensionless stability parameter
+        wtheta      Surface kinematic heat flux
+        wstar       Local Convective velocity scale
+
+-----------------------------------------------------------------------------------------------------
+May 08, 2026
+
+    
