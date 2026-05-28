@@ -11,7 +11,7 @@ module bl_taylor_kzz
 
 contains
 
-    subroutine vertical_diffusivity(kzz_h, kzz_q, kzz_m, gamma, stability_flag, ustar, hpbl, sshfx, govrth, rho, cp ,karman , &
+    subroutine vertical_diffusivity(kzz_h, kzz_q, kzz_m, gamma, stability_flag, qfx, tx, ustar, hpbl, sshfx, govrth, rho, cp ,karman , &
                                     its, ite, kts, kte, kpbl, za, cori, itimestep)
 
         !-------------------------------------------------------------------------------!
@@ -96,41 +96,37 @@ contains
         !       for the Unstable Planetary Boundary Layer and for Rayleigh Convection.  !
         !       Journal of the Atmospheric Sciences, 27(8), 1211-1213. Equation (1).    !
         !                                                                               !
-        !  (12) Hojstrup, J. (1982). Velocity spectra in the unstable planetary         !
-        !       boundary layer. Journal of the Atmospheric Sciences, 39(10), 2239-2248. !
-        !       Equation (8.2).                                                         !
-        !                                                                               !
-        !  (13) Degrazia, G. A., Rizza, U., Mangia, C., & Tirabassi, T. (1997).         !
+        !  (12) Degrazia, G. A., Rizza, U., Mangia, C., & Tirabassi, T. (1997).         !
         !       Validation of a new turbulent parameterization for dispersion models    !
         !       in convective conditions. Boundary-Layer Meteorology, 85(2), 243-254.   !
         !       Equation (18).                                                          !
         !                                                                               !
-        !  (14) Basu, S., & Holtslag, A. A. (2021). Turbulent Prandtl number and        !
+        !  (13) Basu, S., & Holtslag, A. A. (2021). Turbulent Prandtl number and        !
         !       characteristic length scales in stably stratified flows: steady-state   !
         !       analytical solutions. Environmental Fluid Mechanics, 21(6), 1273-1302.  !
-        !       Page 1282.                                                              !
+        !       Page 1282. Equation (2).                                                !
         !                                                                               !
-        !  (15) Foken, T. (2006). 50 years of the Monin-Obukhov similarity theory.      !
+        !  (14) Foken, T. (2006). 50 years of the Monin-Obukhov similarity theory.      !
         !       Boundary-Layer Meteorology, 119(3), 431-447.                            !
         !       Equations (21a, 21b, 22a, 22b).                                         !
         !                                                                               !
-        !  (16) Troen, I. B., & Mahrt, L. (1986). A simple model of the atmospheric     !
+        !  (15) Troen, I. B., & Mahrt, L. (1986). A simple model of the atmospheric     !
         !       boundary layer; sensitivity to surface evaporation. Boundary-Layer      !
         !       Meteorology, 37(1), 129-148. Equation (17).                             !
         !                                                                               !
-        !  (17) Grachev, A. A., Andreas, E. L., Fairall, C. W., Guest, P. S., &         !
+        !  (16) Grachev, A. A., Andreas, E. L., Fairall, C. W., Guest, P. S., &         !
         !       Persson, P. O. G. (2007). On the turbulent Prandtl number in the        !
         !       stable atmospheric boundary layer. Boundary-layer meteorology,          !
         !       125(2), 329-341. Equation (1).                                          !
         !                                                                               !
-        !  (18) Businger, J. A., Wyngaard, J. C., Izumi, Y., & Bradley, E. F. (1971).   !
+        !  (17) Businger, J. A., Wyngaard, J. C., Izumi, Y., & Bradley, E. F. (1971).   !
         !       Flux-profile relationships in the atmospheric surface layer. Journal    !
-        !       of Atmospheric Sciences, 28(2), 181-189.                                !
+        !       of Atmospheric Sciences, 28(2), 181-189. Equation (26).                 !
         !                                                                               !
-        !  (19) Degrazia, G. A., Anfossi, D., Carvalho, J. C., Mangia, C., Tirabassi,   !
+        !  (18) Degrazia, G. A., Anfossi, D., Carvalho, J. C., Mangia, C., Tirabassi,   !
         !       T., & Velho, H. C. (2000). Turbulence parameterisation for PBL          !
         !       dispersion models in all stability conditions. Atmospheric              !
-        !       environment, 34(21), 3575-3583.                                         !
+        !       environment, 34(21), 3575-3583. Equation (28).                          !
         !                                                                               !   
         !-------------------------------------------------------------------------------
 
@@ -140,6 +136,8 @@ contains
         real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                 kzz_m ! Vertical diffusivity for momentum [m^2/s]
         real(kind=kind_phys), dimension( its:ite, kts:kte ), intent(out  )   ::                 gamma ! Counter-gradient [quantity * m/s]
         integer,              dimension( its:ite, kts:kte ), intent(out  )   ::        stability_flag ! PBL stability flag: -1=UNSTABLE, 0=NEUTRAL, 1=STABLE
+        real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                   qfx ! Surface Moisture Flux [kg m^-2 s^-1]
+        real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                    tx ! Lowest model-level air temperature [K]
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                 ustar ! Friction velocity
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                  hpbl ! PBL height
         real(kind=kind_phys), dimension( its:ite ),          intent(in   )   ::                 sshfx ! Surface Sensible Heat Flux
@@ -164,7 +162,6 @@ contains
         real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                 zovrl ! Stability parameter
         real(kind=kind_phys), dimension( its:ite )                           ::                wtheta ! Surface kinematic heat flux [k m s^{-1}]
         real(kind=kind_phys), dimension( its:ite )                           ::                 wstar ! Local Convective velocity scale
-       !real(kind=kind_phys), dimension( its:ite, kts:kte )                  ::                   psi ! Nondimensional molecular dissipation rate
         real(kind=kind_phys), dimension( its:ite )                           ::           ustar_local ! Range limited friction velocity
         real(kind=kind_phys)                                                 ::             sshfx_min ! Surface Sensible Heat Flux lower threshold
         real(kind=kind_phys)                                                 ::            lambda_max ! Local Monin-Obukhov length top threshold
@@ -180,6 +177,9 @@ contains
         integer                                                              ::                  i, k
         character(len=512)                                                   ::             debug_msg
         integer, parameter                                                   :: debug_itimestep = 1000! Time step at which to print debug information
+
+        ! Flag to indicate whether moisture flux contributes to buoyancy
+        integer, parameter :: moist_contribution_flag = 0
 
 
         ! DEBUG ------------------------------------------------------------------------!
@@ -209,9 +209,14 @@ contains
         sshfx_min = 1.0e-3
         do i = its, ite
             if (abs(sshfx(i)) .lt. sshfx_min) then
-                wtheta(i) = sign(sshfx_min, sshfx(i)) / (rho(i) * cp)
+                ! To use the moisture flux contribution to buoyancy, set moist_contribution_flag to 1.
+                if (moist_contribution_flag == 1) then
+                    wtheta(i) = sign(sshfx_min, sshfx(i)) / (rho(i) * cp) + (0.61 * tx(i) * qfx(i) / rho(i))
+                else
+                    wtheta(i) = sign(sshfx_min, sshfx(i)) / (rho(i) * cp)
+                end if
             else
-                wtheta(i) = sshfx(i) / (rho(i) * cp)
+                wtheta(i) = (sshfx(i) / (rho(i) * cp))
             end if
         end do
 
@@ -275,44 +280,15 @@ contains
                     ! Convective velocity scale. References: 10, 11
                     wstar(i) = (govrth(i) * wtheta(i) * hpbl(i)) ** (1.0 / 3.0)
 
-                    ! Nondimensional molecular dissipation rate. Reference: 12
-                    ! Not in use due to new formulation for kzz.
-                    !psi(i,k) = ((1.0 - zovrh(i,k)) ** 2.0 + &
-                    !            0.75 * (- zovrl(i,k)) ** (2.0 / 3.0) &
-                    !           ) ** (3.0 / 2.0)
-
-                    ! Old psi formulation. Reference: 10
-                    !psi(i,k) = ((1.0 - zovrh(i,k)) ** 2.0 * &
-                    !           (- zovrl(i,k)) ** (-2.0 / 3.0) + &
-                    !           0.75) ** (3.0 / 2.0)
-
-                    ! Vertical diffusivity kzz. Reference: 13
+                    ! Vertical diffusivity kzz. Reference: 12
                     kzz(i,k) = (0.22 * wstar(i) * hpbl(i)) * &
                                (zovrh(i,k) ** (1.0/3.0)) * &
                                ((1.0 - zovrh(i,k)) ** (1.0/3.0)) * &
                                (1.0 - exp(- 4.0 * zovrh(i,k)) - &
                                0.0003 * exp(8.0 * zovrh(i,k)))
 
-                    !Old Vertical diffusivity kzz formulation. References: 10, 13
-                    !kzz(i,k) = ((0.15 * psi(i,k) ** (1.0/3.0)) * &
-                    !           (1 - exp(- 4.0 * zovrh(i,k)) - &
-                    !           0.0003 * exp(8.0 * zovrh(i,k))) ** (4.0/3.0)) * &
-                    !           wstar(i) * hpbl(i)
-
-                    ! Prandtl number for CBL. Reference: 18
+                    ! Prandtl number for CBL. Reference: 17
                     prandtl(i,k) = 0.74 
-
-                    ! Old Prandtl number for CBL. References: 15, 16
-                    !phi_h(i,k) = 0.95 * (1.0 - 11.6 * zovrl(i,k)) ** (-1.0 / 2.0)
-                    !phi_m(i,k) = (1.0 - 19.3 * zovrl(i,k)) ** (-1.0 / 4.0)
-                    !prandtl(i,k) = (phi_h(i,k) / phi_m(i,k) * zovrl(i,k) + karman * zovrh(i,k) * 6.5) ** (-1.0)
-
-                    ! Old Prandtl formulation is bounded by the asymptotic limits of unity and four. Reference: 16
-                    ! if (prandtl(i,k) .lt. 1.0) then
-                    !     prandtl(i,k) = 1.0
-                    ! else if (prandtl(i,k) .gt. 4.0) then
-                    !     prandtl(i,k) = 4.0
-                    ! end if
 
                 ! Stable PBL
                 elseif (trim(stability(i,k)) == 'STABLE') then
@@ -334,12 +310,12 @@ contains
                             0.33 * ((1.0 - zovrh(i,k)) ** (alpha_1 / 2.0)) * zovrh(i,k) / &
                             (1.0 + 3.7 * zovrh(i,k) * (hpbl(i) / lambda(i,k)))
 
-                    ! Prandtl number for SBL. References: 15, 17
+                    ! Prandtl number for SBL. References: 14, 16
                     phi_h(i,k) = 0.95 + 7.8 * zovrl(i,k)
                     phi_m(i,k) = 1.0 + 6.0 * zovrl(i,k)
                     prandtl(i,k) = phi_h(i,k) / phi_m(i,k)
 
-                    ! Prandtl number is bounded by the asymptotic limits of unity and four. Reference: 16
+                    ! Prandtl number is bounded by the asymptotic limits of unity and four. Reference: 15
                     if (prandtl(i,k) .lt. 1.0) then
                         prandtl(i,k) = 1.0
                     else if (prandtl(i,k) .gt. 4.0) then
@@ -361,14 +337,9 @@ contains
                         lambda(i,k) = lambda_max
                     end if
                 
-                    ! Vertical diffusivity kzz. Reference: 19
+                    ! Vertical diffusivity kzz. Reference: 18
                     kzz(i,k) = (0.4 * (1.0 - zovrh(i,k)) ** 0.85 * ustar_local(i) * za(i,k)) / &
                                (1.0 + 15.0 * cori * za(i,k) / ustar_local(i)) ** (4.0 / 3.0)
-
-                    ! Old Vertical diffusivity kzz formulation. References: 8, 10
-                    !kzz(i,k) = (ustar_local(i) * hpbl(i)) * &
-                    !        0.33 * ((1.0 - zovrh(i,k)) ** (alpha_1 / 2.0)) * zovrh(i,k) / &
-                    !        (1.0 + 3.7 * zovrh(i,k) * (hpbl(i) / lambda(i,k)))
 
                     ! Prandtl number for small values of Ri. Reference: 14
                     prandtl(i,k) = 0.85
@@ -385,8 +356,8 @@ contains
 
         end do
 
-        ! Heat and moisture diffusivity are assumed to be the same. Reference: 16
-        ! Momentum diffusivity is given by heat diffusivity times the Prandtl number. References: 14
+        ! Heat and moisture diffusivity are assumed to be the same. Reference: 15
+        ! Momentum diffusivity is given by heat diffusivity times the Prandtl number. References: 13
         do i = its,ite
             do k = kts,kte
                 kzz_h(i,k) = kzz(i,k)

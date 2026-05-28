@@ -1263,7 +1263,7 @@
 
    !TAYLOR CODE!=======================================================!
 
-   call vertical_diffusivity(taylor_kzz_h, taylor_kzz_q, taylor_kzz_m, gamma, taylor_stab_flag, ust, hpbl, hfx, govrth, rhox, cp ,karman ,   &
+   call vertical_diffusivity(taylor_kzz_h, taylor_kzz_q, taylor_kzz_m, gamma, taylor_stab_flag, qfx, tx, ust, hpbl, hfx, govrth, rhox, cp ,karman ,   &
                              its, ite, kts, kte, kpbl, za, cori, itimestep)
 
    stability_flagx = taylor_stab_flag
